@@ -12,7 +12,7 @@ ThisBuild / scalacOptions := Seq(
   "-language:existentials",
   "-language:postfixOps",
   "-unchecked",
-  "-Ywarn-value-discard",
+  "-Ywarn-value-discard"
 )
 
 lazy val `supercharge-scala-future` = project
