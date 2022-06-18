@@ -50,7 +50,7 @@ class UserCreationServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
       val console = Console.mock(inputs, outputs)
       val service = new UserCreationService(console, fixClock)
 
-      val result = service.readDateOfBirth.unsafeRun()
+      val result = service.readDateOfBirthFC.unsafeRun()
 
       assert(result == date)
       assert(outputs.toList == List("What's your date of birth? [dd-mm-yyyy]"))
@@ -64,14 +64,14 @@ class UserCreationServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
       val console = Console.mock(inputs, outputs)
       val service = new UserCreationService(console, fixClock)
 
-      val result = Try(service.readDateOfBirth.unsafeRun())
+      val result = Try(service.readDateOfBirthFC.unsafeRun())
 
       assert(result.isFailure)
       assert(
         outputs.toList == List(
-          "What's your date of birth? [dd-mm-yyyy]"
+          "What's your date of birth? [dd-mm-yyyy]",
           // Uncomment after adding `onError` to `readDateOfBirth`
-          // """Incorrect format, for example enter "18-03-2001" for 18th of March 2001""",
+           """Incorrect format, for example enter "18-03-2001" for 18th of March 2001""",
         )
       )
     }
@@ -84,7 +84,7 @@ class UserCreationServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
       val console = Console.mock(inputs, outputs)
       val service = new UserCreationService(console, fixClock)
 
-      val result = service.readSubscribeToMailingList.unsafeRun()
+      val result = service.readSubscribeToMailingListFC.unsafeRun()
 
       assert(result == bool)
       assert(outputs.toList == List("Would you like to subscribe to our mailing list? [Y/N]"))
@@ -98,14 +98,14 @@ class UserCreationServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
       val console = Console.mock(inputs, outputs)
       val service = new UserCreationService(console, fixClock)
 
-      val result = Try(service.readSubscribeToMailingList.unsafeRun())
+      val result = Try(service.readSubscribeToMailingListFC.unsafeRun())
 
       assert(result.isFailure)
       assert(
         outputs.toList == List(
-          "Would you like to subscribe to our mailing list? [Y/N]"
+          "Would you like to subscribe to our mailing list? [Y/N]",
           // Uncomment after adding `onError` to `readSubscribeToMailingList`
-          // """Incorrect format, enter "Y" for Yes or "N" for "No"""",
+           """Incorrect format, enter "Y" for Yes or "N" for "No"""",
         )
       )
     }
@@ -124,14 +124,14 @@ class UserCreationServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
       val clock   = Clock.constant(now)
       val service = new UserCreationService(console, clock)
 
-      val result   = Try(service.readUser.unsafeRun())
+      val result   = Try(service.readUserFC.unsafeRun())
       val expected = User(name, dob, yesNo, now)
 
       assert(result == Success(expected))
     }
   }
 
-  ignore("readUser with retry") {
+  test("readUser with retry") {
     forAll(
       arbitrary[String],
       Gen.listOf(invalidDateGen),
@@ -149,7 +149,7 @@ class UserCreationServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
       val clock       = Clock.constant(now)
       val service     = new UserCreationService(console, clock)
 
-      val result   = Try(service.readUser.unsafeRun())
+      val result   = Try(service.readUserFC.unsafeRun())
       val expected = User(name, dob, yesNo, now)
 
       if (invalidDates.size >= 3 || invalidYesNo.size >= 3)
