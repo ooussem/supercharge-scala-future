@@ -1,13 +1,24 @@
 package exercises.action.fp.search
 
 // `flights` must be ordered using `SearchResult.bestOrdering`
-case class SearchResult(flights: List[Flight]) {
+case class SearchResult private (flights: List[Flight]) {
   val cheapest: Option[Flight] = flights.minByOption(_.unitPrice)
   val fastest: Option[Flight]  = flights.minByOption(_.duration)
   val best: Option[Flight]     = flights.minOption(SearchResult.bestOrdering)
 }
 
 object SearchResult {
+  def apply(listFlight: List[Flight]): SearchResult = {
+    new SearchResult(
+      listFlight
+        .groupBy(flight => flight.flightId)
+        .view
+        .mapValues(flights => flights.minBy(_.unitPrice))
+        .values
+        .toList
+        .sorted(bestOrdering)
+    )
+  }
   
   // Order by number of stops (0, 1, 2, ...) and then by price.
   // For example, sorting the following flights

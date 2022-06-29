@@ -6,6 +6,7 @@ import exercises.action.fp.IO
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.util.Sorting
 
 // This represent the main API of Lambda Corp.
 // `search` is called whenever a user press the "Search" button on the website.
@@ -23,17 +24,20 @@ object SearchFlightService {
   // (see `SearchResult` companion object).
   // Note: A example based test is defined in `SearchFlightServiceTest`.
   //       You can also defined tests for `SearchResult` in `SearchResultTest`
-  def fromTwoClients(client1: SearchFlightClient, client2: SearchFlightClient): SearchFlightService =
-    new SearchFlightService {
-      def search(from: Airport, to: Airport, date: LocalDate): IO[SearchResult] =
-        ???
-
+  def bestFromTwoClients(client1: SearchFlightClient, client2: SearchFlightClient): SearchFlightService = new SearchFlightService {
+    override def search(from: Airport, to: Airport, date: LocalDate): IO[SearchResult] = {
+      for {
+        ioFlight1 <- client1.search(from, to, date)
+        ioFlight2 <- client2.search(from, to, date)
+      } yield SearchResult(ioFlight1 ++: ioFlight2)
     }
+  }
 
   // 2. Several clients can return data for the same flight. For example, if we combine data
   // from British Airways and lastminute.com, lastminute.com may include flights from British Airways.
   // Update `fromTwoClients` so that if we get two or more flights with the same `flightId`,
   // `SearchFlightService` selects the flight with the lowest `unitPrice` and discards the other ones.
+  // ==> done
 
   // 3. A client may occasionally throw an exception. `fromTwoClients` should
   // handle the error gracefully, for example log a message and ignore the error.

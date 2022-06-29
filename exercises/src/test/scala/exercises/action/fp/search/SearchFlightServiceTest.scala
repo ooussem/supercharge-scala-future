@@ -18,7 +18,7 @@ import scala.util.Random
 // testOnly exercises.action.fp.search.SearchFlightServiceTest
 class SearchFlightServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyChecks {
 
-  ignore("fromTwoClients example") {
+  test("fromTwoClients example") {
     val now   = Instant.now()
     val today = LocalDate.now()
 
@@ -30,10 +30,29 @@ class SearchFlightServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
     val client1 = SearchFlightClient.constant(IO(List(flight3, flight1)))
     val client2 = SearchFlightClient.constant(IO(List(flight2, flight4)))
 
-    val service = SearchFlightService.fromTwoClients(client1, client2)
+    val service = SearchFlightService.bestFromTwoClients(client1, client2)
     val result  = service.search(parisOrly, londonGatwick, today).unsafeRun()
 
     assert(result == SearchResult(List(flight1, flight2, flight3, flight4)))
+  }
+
+
+  test("fromTwoClients example cheapest") {
+    val now   = Instant.now()
+    val today = LocalDate.now()
+
+    val flight1 = Flight("1", "BA", parisOrly, londonGatwick, now, Duration.ofMinutes(100), 0, 89.5, "")
+    val flight2 = Flight("1", "LH", parisOrly, londonGatwick, now, Duration.ofMinutes(105), 0, 96.5, "")
+    val flight3 = Flight("3", "BA", parisOrly, londonGatwick, now, Duration.ofMinutes(140), 1, 234.0, "")
+    val flight4 = Flight("4", "LH", parisOrly, londonGatwick, now, Duration.ofMinutes(210), 2, 55.5, "")
+
+    val client1 = SearchFlightClient.constant(IO(List(flight3, flight1)))
+    val client2 = SearchFlightClient.constant(IO(List(flight2, flight4)))
+
+    val service = SearchFlightService.bestFromTwoClients(client1, client2)
+    val result  = service.search(parisOrly, londonGatwick, today).unsafeRun()
+
+    assert(result == SearchResult(List(flight1, flight3, flight4)))
   }
 
 }
