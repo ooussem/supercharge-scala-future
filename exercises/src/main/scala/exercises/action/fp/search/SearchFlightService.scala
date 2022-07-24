@@ -1,12 +1,10 @@
 package exercises.action.fp.search
 
-import java.time.LocalDate
 import exercises.action.fp.IO
 
-import scala.annotation.tailrec
+import java.time.LocalDate
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.Sorting
 
 // This represent the main API of Lambda Corp.
 // `search` is called whenever a user press the "Search" button on the website.
@@ -26,12 +24,18 @@ object SearchFlightService {
   //       You can also defined tests for `SearchResult` in `SearchResultTest`
   def bestFromTwoClients(client1: SearchFlightClient, client2: SearchFlightClient): SearchFlightService = new SearchFlightService {
     override def search(from: Airport, to: Airport, date: LocalDate): IO[SearchResult] = {
+      def searchWithHandlingError(client: SearchFlightClient): IO[List[Flight]] = {
+        client.search(from, to, date).handleErrorWith(e => IO.debug(s"Error : $e") *> IO(Nil))
+      }
+
       for {
-        ioFlight1 <- client1.search(from, to, date)
-        ioFlight2 <- client2.search(from, to, date)
+        ioFlight1 <- searchWithHandlingError(client1)
+        ioFlight2 <- searchWithHandlingError(client2)
       } yield SearchResult(ioFlight1 ++: ioFlight2)
     }
   }
+
+
 
   // 2. Several clients can return data for the same flight. For example, if we combine data
   // from British Airways and lastminute.com, lastminute.com may include flights from British Airways.
