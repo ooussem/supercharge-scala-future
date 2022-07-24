@@ -41,12 +41,13 @@ object SearchFlightService {
   // from British Airways and lastminute.com, lastminute.com may include flights from British Airways.
   // Update `fromTwoClients` so that if we get two or more flights with the same `flightId`,
   // `SearchFlightService` selects the flight with the lowest `unitPrice` and discards the other ones.
-  // ==> done
+  // ==> Done
 
   // 3. A client may occasionally throw an exception. `fromTwoClients` should
   // handle the error gracefully, for example log a message and ignore the error.
   // In other words, `fromTwoClients` should consider that a client which throws an exception
   // is the same as a client which returns an empty list.
+  // ==> Done
 
   // 4. Implement `fromClients` which behaves like `fromTwoClients` but it takes
   // a list of `SearchFlightClient`.
