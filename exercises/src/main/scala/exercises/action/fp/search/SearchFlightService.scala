@@ -3,6 +3,7 @@ package exercises.action.fp.search
 import exercises.action.fp.IO
 
 import java.time.LocalDate
+import scala.+:
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -55,8 +56,17 @@ object SearchFlightService {
   // Note: We can assume `clients` to contain less than 100 elements.
   def fromClients(clients: List[SearchFlightClient]): SearchFlightService =
     new SearchFlightService {
-      def search(from: Airport, to: Airport, date: LocalDate): IO[SearchResult] =
-        ???
+      def search(from: Airport, to: Airport, date: LocalDate): IO[SearchResult] = {
+        def searchWithHandlingError(client: SearchFlightClient): IO[List[Flight]] = {
+          client.search(from, to, date).handleErrorWith(e => IO.debug(s"Error : $e") *> IO(Nil))
+        }
+        clients.foldLeft(IO(List.empty[Flight]))((io, client) => {
+          for {
+            ioFlight1 <- searchWithHandlingError(client)
+            flight <- io
+          } yield ioFlight1 ++: flight
+        }).map(SearchResult(_))
+      }
     }
 
   // 5. Refactor `fromClients` using `sequence` or `traverse` from the `IO` companion object.
