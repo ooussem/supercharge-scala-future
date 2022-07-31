@@ -3,6 +3,7 @@ package exercises.action.fp.search
 import exercises.action.fp.IO
 
 import java.time.LocalDate
+import java.util.concurrent.{ExecutorCompletionService, ExecutorService, ThreadPoolExecutor}
 import scala.+:
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -23,16 +24,23 @@ object SearchFlightService {
   // (see `SearchResult` companion object).
   // Note: A example based test is defined in `SearchFlightServiceTest`.
   //       You can also defined tests for `SearchResult` in `SearchResultTest`
-  def bestFromTwoClients(client1: SearchFlightClient, client2: SearchFlightClient): SearchFlightService = new SearchFlightService {
+  def bestFromTwoClients(client1: SearchFlightClient, client2: SearchFlightClient)
+                        (implicit ec: ExecutionContext): SearchFlightService = new SearchFlightService {
+    import scala.concurrent.ExecutionContext
+
     override def search(from: Airport, to: Airport, date: LocalDate): IO[SearchResult] = {
       def searchWithHandlingError(client: SearchFlightClient): IO[List[Flight]] = {
         client.search(from, to, date).handleErrorWith(e => IO.debug(s"Error : $e") *> IO(Nil))
       }
+//      for {
+//        ioFlight1 <- searchWithHandlingError(client1)
+//        ioFlight2 <- searchWithHandlingError(client2)
+//      } yield SearchResult(ioFlight1 ++: ioFlight2)
 
       for {
-        ioFlight1 <- searchWithHandlingError(client1)
-        ioFlight2 <- searchWithHandlingError(client2)
-      } yield SearchResult(ioFlight1 ++: ioFlight2)
+        tuple <- searchWithHandlingError(client1).parZip(searchWithHandlingError(client2))(ec)
+      } yield SearchResult(tuple._1 ++: tuple._2)
+
     }
   }
 
