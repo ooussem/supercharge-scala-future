@@ -60,13 +60,21 @@ object SearchFlightService {
         def searchWithHandlingError(client: SearchFlightClient): IO[List[Flight]] = {
           client.search(from, to, date).handleErrorWith(e => IO.debug(s"Error : $e") *> IO(Nil))
         }
-        clients.foldLeft(IO(List.empty[Flight]))((io, client) => {
-          for {
-            clientFlights <- searchWithHandlingError(client)
-            otherFlights <- io
-          } yield clientFlights ++: otherFlights
-        }).map(SearchResult(_))
+//        clients.foldLeft(IO(List.empty[Flight]))((io, client) => {
+//          for {
+//            clientFlights <- searchWithHandlingError(client)
+//            otherFlights <- io
+//          } yield clientFlights ++: otherFlights
+//        }).map(SearchResult(_))
+
+//        IO.traverse(clients)(client => client.search(from, to, date)).map(_.flatten)
+
+        clients
+          .traverse(searchWithHandlingError)
+          .map(_.flatten)
+          .map(SearchResult(_))
       }
+
     }
 
   // 5. Refactor `fromClients` using `sequence` or `traverse` from the `IO` companion object.

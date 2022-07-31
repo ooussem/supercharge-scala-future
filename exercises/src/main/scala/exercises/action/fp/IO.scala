@@ -182,13 +182,13 @@ object IO {
     //      })
     //    }
 
-
     actions.foldLeft(IO(List.empty[A]))((ioList, io) => {
       for {
-        list <- ioList
+        listAction <- ioList
         action <- io
-      } yield list ::: List(action)
-    })
+      } yield action :: listAction
+    }).map(_.reverse)
+
 
   }
 
