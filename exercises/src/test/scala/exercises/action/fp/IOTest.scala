@@ -205,7 +205,7 @@ class IOTest extends AnyFunSuite with ScalaCheckDrivenPropertyChecks {
     assert(counter == 5)
   }
 
-  ignore("traverse") {
+  test("traverse") {
     var counter = 0
 
     val values: List[Int => Int] = List(_ + 2, _ * 3, _ - 1)
