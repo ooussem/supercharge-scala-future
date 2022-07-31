@@ -62,9 +62,9 @@ object SearchFlightService {
         }
         clients.foldLeft(IO(List.empty[Flight]))((io, client) => {
           for {
-            ioFlight1 <- searchWithHandlingError(client)
-            flight <- io
-          } yield ioFlight1 ++: flight
+            clientFlights <- searchWithHandlingError(client)
+            otherFlights <- io
+          } yield clientFlights ++: otherFlights
         }).map(SearchResult(_))
       }
     }
