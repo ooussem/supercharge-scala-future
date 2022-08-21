@@ -192,7 +192,6 @@ object IO {
       } yield action :: listAction
     }).map(_.reverse)
 
-
   }
 
   // `traverse` is a shortcut for `map` followed by `sequence`, similar to how
@@ -216,8 +215,16 @@ object IO {
   // If no error occurs, `parSequence` returns the users in the same order:
   // List(User(1111, ...), User(2222, ...), User(3333, ...))
   // Note: You may want to use `parZip` to implement `parSequence`.
-  def parSequence[A](actions: List[IO[A]])(ec: ExecutionContext): IO[List[A]] =
-    ???
+  def parSequence[A](actions: List[IO[A]])(ec: ExecutionContext): IO[List[A]] = {
+    IO {
+      actions.foldLeft(IO(List.empty[A]))((ioList, io) => {
+        for {
+          listAction <- ioList
+          action <- io
+        } yield action :: listAction
+      }).map(_.reverse)
+    }
+  }
 
   // `parTraverse` is a shortcut for `map` followed by `parSequence`, similar to how
   // `flatMap`     is a shortcut for `map` followed by `flatten`
