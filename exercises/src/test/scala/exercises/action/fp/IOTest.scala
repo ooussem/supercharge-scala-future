@@ -225,7 +225,7 @@ class IOTest extends AnyFunSuite with ScalaCheckDrivenPropertyChecks {
   test("parZip second faster than first") {
     var counter = 0
 
-    val first  = IO.sleep(10.millis) *> IO { counter += 1; counter }
+    val first  = IO.sleep(20.millis) *> IO { counter += 1; counter }
     val second = IO { counter *= 2; counter }
 
     val action = first.parZip(second)(global)
@@ -254,7 +254,7 @@ class IOTest extends AnyFunSuite with ScalaCheckDrivenPropertyChecks {
     var counter = 0
 
     val action = List(
-      IO.sleep(10.millis) *> IO { counter *= 3; counter },
+      IO.sleep(20.millis) *> IO { counter *= 3; counter },
       IO { counter += 2; counter },
       IO.sleep(50.millis) *> IO { counter -= 1; counter }
     ).parSequence(global)
@@ -271,7 +271,7 @@ class IOTest extends AnyFunSuite with ScalaCheckDrivenPropertyChecks {
     def sleepAndIncrement(sleepMillis: Int): IO[Int] =
       IO.sleep(sleepMillis.millis) *> IO { counter += 1; counter }
 
-    val action = List(10, 0, 50).parTraverse(sleepAndIncrement)(global)
+    val action = List(20, 0, 50).parTraverse(sleepAndIncrement)(global)
     assert(counter == 0)
 
     assert(action.unsafeRun() == List(2, 1, 3))

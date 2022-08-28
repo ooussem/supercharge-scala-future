@@ -133,14 +133,13 @@ trait IO[A] {
 
   // Runs both the current IO and `other` concurrently,
   // then combine their results into a tuple
-  def parZip[Other](other: IO[Other])(ec: ExecutionContext): IO[(A, Other)] = {
+  def parZip[Other](other: IO[Other])(ec: ExecutionContext): IO[(A, Other)] =
     IO {
       val f1 = Future {this.unsafeRun()}(ec)
       val fOther = Future {other.unsafeRun()}(ec)
       val fResult = f1.zip(fOther)
       Await.result(fResult, Duration.Inf)
     }
-  }
 
 }
 
@@ -178,19 +177,17 @@ object IO {
   // If no error occurs, it returns the users in the same order:
   // List(User(1111, ...), User(2222, ...), User(3333, ...))
   def sequence[A](actions: List[IO[A]]): IO[List[A]] = {
-
     //    IO {
     //      actions.foldLeft(List.empty[A])((actionList, io) => {
     //        actionList :+ io.unsafeRun()
     //      })
     //    }
 
-    actions.foldLeft(IO(List.empty[A]))((ioList, io) => {
-      for {
-        listAction <- ioList
-        action <- io
-      } yield action :: listAction
-    }).map(_.reverse)
+    actions
+      .foldLeft(IO(List.empty[A]))((ioList, io) => {
+        ioList.zip(io).map { case (list, io) => io :: list }
+      })
+      .map(_.reverse)
 
   }
 
@@ -199,8 +196,9 @@ object IO {
   // For example,
   // traverse(List(1111, 2222, 3333))(db.getUser) is equivalent to
   // sequence(List(db.getUser(1111), db.getUser(2222), db.getUser(3333)))
-  def traverse[A, B](values: List[A])(action: A => IO[B]): IO[List[B]] =
+  def traverse[A, B](values: List[A])(action: A => IO[B]): IO[List[B]] = {
     sequence(values.map(action))
+  }
 
   //////////////////////////////////////////////
   // Concurrent IO
@@ -215,16 +213,12 @@ object IO {
   // If no error occurs, `parSequence` returns the users in the same order:
   // List(User(1111, ...), User(2222, ...), User(3333, ...))
   // Note: You may want to use `parZip` to implement `parSequence`.
-  def parSequence[A](actions: List[IO[A]])(ec: ExecutionContext): IO[List[A]] = {
-    IO {
-      actions.foldLeft(IO(List.empty[A]))((ioList, io) => {
-        for {
-          listAction <- ioList
-          action <- io
-        } yield action :: listAction
-      }).map(_.reverse)
-    }
-  }
+  def parSequence[A](actions: List[IO[A]])(ec: ExecutionContext): IO[List[A]] =
+    actions
+      .foldLeft(IO(List.empty[A])){ (ioList, io) => {
+        ioList.parZip(io)(ec).map { case (list, io) => io :: list }}}
+      .map(_.reverse)
+
 
   // `parTraverse` is a shortcut for `map` followed by `parSequence`, similar to how
   // `flatMap`     is a shortcut for `map` followed by `flatten`
