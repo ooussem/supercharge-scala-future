@@ -7,8 +7,10 @@ import scala.util.{Failure, Success, Try}
 trait IO[A] {
 
   // Executes the action.
+  def unsafeRun(): A = unsafeRunAsync()
+
   // This is the ONLY abstract method of the `IO` trait.
-  def unsafeRun(): A
+  def unsafeRunAsync(callback: Try[A] => Unit): Unit
 
   // Runs the current IO (`this`), discards its result and runs the second IO (`other`).
   // For example,
@@ -138,20 +140,35 @@ trait IO[A] {
       val f1 = Future {this.unsafeRun()}(ec)
       val fOther = Future {other.unsafeRun()}(ec)
       val fResult = f1.zip(fOther)
+
+      // It's blocking
       Await.result(fResult, Duration.Inf)
     }
 
 }
 
 object IO {
+
+  def async[A](onComplete: (Try[A] => Unit) => Unit): IO[A] =
+    new IO[A] {
+      override def unsafeRunAsync(callback: Try[A] => Unit): Unit = {
+        onComplete(callback)
+      }
+    }
+
   // Constructor for IO. For example,
   // val greeting: IO[Unit] = IO { println("Hello") }
   // greeting.unsafeRun()
   // prints "Hello"
   def apply[A](action: => A): IO[A] =
-    new IO[A] {
-      def unsafeRun(): A = action
+    async { callback =>
+      callback(Try(action))
     }
+
+  def dispatch[A](action: => A)(ec: ExecutionContext): IO[A] =
+    async { callback =>
+        ec.execute(() => { callback(Try(action))} )
+      }
 
   // Construct an IO which throws `error` everytime it is called.
   def fail[A](error: Throwable): IO[A] =
@@ -216,7 +233,8 @@ object IO {
   def parSequence[A](actions: List[IO[A]])(ec: ExecutionContext): IO[List[A]] =
     actions
       .foldLeft(IO(List.empty[A])){ (ioList, io) => {
-        ioList.parZip(io)(ec).map { case (list, io) => io :: list }}}
+        ioList.parZip(io)(ec).map { case (list, io) => io :: list }
+      }}
       .map(_.reverse)
 
 

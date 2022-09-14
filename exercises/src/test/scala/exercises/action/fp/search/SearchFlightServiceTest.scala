@@ -4,8 +4,7 @@ import exercises.action.DateGenerator._
 import exercises.action.fp.IO
 import exercises.action.fp.search.Airport._
 import exercises.action.fp.search.SearchFlightGenerator._
-import org.scalacheck.{Arbitrary, Gen}
-import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Gen
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
@@ -17,6 +16,7 @@ import scala.util.Random
 // or run `sbt` in the terminal to open it in shell mode, then type:
 // testOnly exercises.action.fp.search.SearchFlightServiceTest
 class SearchFlightServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyChecks {
+  import ExecutionContext.Implicits.global
 
   test("fromTwoClients example") {
     val now   = Instant.now()
@@ -36,7 +36,6 @@ class SearchFlightServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
     assert(result == SearchResult(List(flight1, flight2, flight3, flight4)))
   }
 
-
   test("fromTwoClients example cheapest") {
     val now   = Instant.now()
     val today = LocalDate.now()
@@ -54,7 +53,6 @@ class SearchFlightServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
 
     assert(result == SearchResult(List(flight1, flight3, flight4)))
   }
-
 
   test("fromTwoClients should throw error") {
     val now   = Instant.now()
@@ -119,7 +117,4 @@ class SearchFlightServiceTest extends AnyFunSuite with ScalaCheckDrivenPropertyC
       assert(result1 == result2)
     }
   }
-
-
-
 }
