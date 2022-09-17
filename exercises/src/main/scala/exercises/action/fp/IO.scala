@@ -1,16 +1,29 @@
 package exercises.action.fp
 
+import exercises.action.fp.IO.async
+
+import java.util.concurrent.CountDownLatch
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 trait IO[A] {
 
-  // Executes the action.
-  def unsafeRun(): A = unsafeRunAsync()
-
   // This is the ONLY abstract method of the `IO` trait.
   def unsafeRunAsync(callback: Try[A] => Unit): Unit
+
+  // Executes the action.
+  def unsafeRun(): A = {
+    var result: Option[Try[A]] = Option.empty
+    val latch = new CountDownLatch(1)
+    unsafeRunAsync { tryA =>
+      result = Some(tryA)
+      latch.countDown()
+    }
+
+    latch.await()
+    result.get.get
+  }
 
   // Runs the current IO (`this`), discards its result and runs the second IO (`other`).
   // For example,
@@ -149,26 +162,28 @@ trait IO[A] {
 
 object IO {
 
+  // Constructor for IO. For example,
+  // val greeting: IO[Unit] = IO { println("Hello") }
+  // greeting.unsafeRun()
+  // prints "Hello"
+  def apply[A](action: => A): IO[A] =
+    async { onComplete =>
+      onComplete(Try(action))
+    }
+
+  def dispatch[A](action: => A)(ec: ExecutionContext): IO[A] =
+    async { callback =>
+      ec.execute(() => {
+        callback(Try(action))
+      })
+    }
+
   def async[A](onComplete: (Try[A] => Unit) => Unit): IO[A] =
     new IO[A] {
       override def unsafeRunAsync(callback: Try[A] => Unit): Unit = {
         onComplete(callback)
       }
     }
-
-  // Constructor for IO. For example,
-  // val greeting: IO[Unit] = IO { println("Hello") }
-  // greeting.unsafeRun()
-  // prints "Hello"
-  def apply[A](action: => A): IO[A] =
-    async { callback =>
-      callback(Try(action))
-    }
-
-  def dispatch[A](action: => A)(ec: ExecutionContext): IO[A] =
-    async { callback =>
-        ec.execute(() => { callback(Try(action))} )
-      }
 
   // Construct an IO which throws `error` everytime it is called.
   def fail[A](error: Throwable): IO[A] =
