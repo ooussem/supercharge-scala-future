@@ -123,7 +123,11 @@ trait IO[A] {
   // 1. Success(User(1234, "Bob", ...)) if `action` was successful or
   // 2. Failure(new Exception("User 1234 not found")) if `action` throws an exception
   def attempt: IO[Try[A]] = {
-    IO(Try(this.unsafeRun()))
+//    IO(Try(this.unsafeRun()))
+
+    IO.async { onComplete =>
+      unsafeRunAsync(callback => onComplete(Success(callback)))
+    }
   }
 
   // If the current IO is a success, do nothing.
