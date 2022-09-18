@@ -4,7 +4,7 @@ import exercises.action.fp.IO.async
 
 import java.util.concurrent.CountDownLatch
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 trait IO[A] {
@@ -68,9 +68,16 @@ trait IO[A] {
   // action.unsafeRun()
   // Fetches the user with id 1234 from the database and send them an email using the email
   // address found in the database.
-  def flatMap[Next](callback: A => IO[Next]): IO[Next] = {
+  def flatMap[Next](next: A => IO[Next]): IO[Next] = {
 //    this.map(a => callback(a).unsafeRun())
-    IO(callback(this.unsafeRun()).unsafeRun())
+//    IO(next(this.unsafeRun()).unsafeRun()) // Block with unsafeRun
+
+    IO.async { callBack =>
+      unsafeRunAsync {
+        case Failure(exception) => callBack(Failure(exception))
+        case Success(value) => next(value).unsafeRunAsync(callBack)
+      }
+    }
   }
 
   // Runs the current action, if it fails it executes `cleanup` and rethrows the original error.
@@ -149,13 +156,12 @@ trait IO[A] {
   // Runs both the current IO and `other` concurrently,
   // then combine their results into a tuple
   def parZip[Other](other: IO[Other])(ec: ExecutionContext): IO[(A, Other)] =
-    IO {
-      val f1 = Future {this.unsafeRun()}(ec)
-      val fOther = Future {other.unsafeRun()}(ec)
-      val fResult = f1.zip(fOther)
-
-      // It's blocking
-      Await.result(fResult, Duration.Inf)
+    IO.async { callback =>
+      val promise1: Promise[A] = Promise()
+      val promise2: Promise[Other] = Promise()
+      ec.execute(() => this.unsafeRunAsync(promise1.complete))
+      ec.execute(() => other.unsafeRunAsync(promise2.complete))
+      promise1.future.zip(promise2.future).onComplete(callback)(ec)
     }
 
 }
