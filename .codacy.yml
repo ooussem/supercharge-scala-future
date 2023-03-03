@@ -1,0 +1,8 @@
+---
+engines:
+  spotbugs:
+    modules:
+      - classesDirectories: [ "core/target/classes" ]
+        sourceDirectories:  [ "core/src/main" ]
+      - classesDirectories: [ "api/target/classes" ]
+        sourceDirectories:  [ "api/src/main" ]

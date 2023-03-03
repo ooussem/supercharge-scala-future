@@ -172,6 +172,10 @@ trait IO[A] {
 
 object IO {
 
+  def unusedCodeMethode(a: Int, b: String): String = {
+    b + a
+  }
+
   // Constructor for IO. For example,
   // val greeting: IO[Unit] = IO { println("Hello") }
   // greeting.unsafeRun()
