@@ -1,5 +1,5 @@
-# Supercharge Scala Future Course from https://www.udemy.com/course-dashboard-redirect/?course_id=4302863  
-Created by Julien Truffaut
+# Supercharge Scala Future Course By Julien Truffaut  
+https://www.udemy.com/course-dashboard-redirect/?course_id=4302863
 
 
 
